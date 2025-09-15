@@ -145,6 +145,10 @@ Swap configuration
 
 To disable swap, sudo swapoff -a can be used to disable swapping temporarily. To make this change persistent across reboots, make sure swap is disabled in config files like /etc/fstab, systemd.swap, depending how it was configured on your system.
 
+for check this see this
+```
+free -h
+```
 
 ### Container runtime
 I use  CRI-O
@@ -241,6 +245,8 @@ error execution phase preflight: [preflight] Some fatal errors occurred:
     Environment="HTTP_PROXY=http://127.0.0.1:8118"
     Environment="HTTPS_PROXY=http://127.0.0.1:8118"
     Environment="NO_PROXY=localhost,127.0.0.1,10.96.0.0/12,10.244.0.0/16,192.168.0.0/16,.svc,.cluster.local"
+    Environment="ALL_PROXY=http://127.0.0.1:8118"
+    Environment="all_proxy=http://127.0.0.1:8118"
     EOF
     ```
 - Reload and restart CRI-O:
@@ -1462,3 +1468,157 @@ servingEngineSpec:
 helm install  vllm vllm/vllm-stack \
   -f tutorials/assets/values-01-minimal-example2.yaml
 ```
+
+
+Expose the vllm-router-service port to the host machine:
+```
+kubectl port-forward --address 0.0.0.0 svc/vllm-router-service 30080:80
+```
+
+
+for running another model you can just change this 
+modelURL: "facebook/opt-125m"
+but it does not work for me because of internet problem or unknown reason
+so I download the model manually 
+with git 
+```
+sudo apt install git-lfs
+```
+for example 
+```
+git clone https://huggingface.co/Qwen/Qwen3-0.6B
+```
+copy that on ```/models``` directory in root in all nodes
+then use this config yaml
+```
+servingEngineSpec:
+  runtimeClassName: "crun"
+
+  modelSpec:
+    - name: "qwen3"
+      repository: "vllm/vllm-openai"
+      tag: "v0.8.4"
+      modelURL: "/models/Qwen3-0.6B"
+
+      replicaCount: 2
+
+      requestCPU: 6
+      requestMemory: "16Gi"
+      requestGPU: 1
+
+      # (optional) pin to your GPU nodes; label them first
+      #   kubectl label node <node1> gpu=true
+      #   kubectl label node <node2> gpu=true
+      nodeSelector:
+        gpu: "true"
+
+
+      # Add path
+      extraVolumes:
+        - name: local-models
+          hostPath:
+            path: /models/Qwen3-0.6B   # path on each node
+            type: Directory
+      extraVolumeMounts:
+        - name: local-models
+          mountPath: /models/Qwen3-0.6B
+          readOnly: true
+
+      # Keep replicas on different nodes
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  # Adjust if your chart uses different labels; these are common defaults
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values: ["vllm-stack"]
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values: ["serving-engine"]
+              topologyKey: kubernetes.io/hostname
+
+      # Extra safety to spread by node
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: ["vllm-stack"]
+              - key: app.kubernetes.io/component
+                operator: In
+                values: ["serving-engine"]
+
+      # (only if your GPU nodes are tainted)
+      # tolerations:
+      #   - key: "nvidia.com/gpu"
+      #     operator: "Exists"
+      #     effect: "NoSchedule"
+```
+
+
+## Having one model on two node
+
+lets start with 
+#### Setting Up a Kuberay Operator on Your Kubernetes Environment
+
+Add the KubeRay Helm repository:
+```
+helm repo add kuberay https://ray-project.github.io/kuberay-helm/
+helm repo update
+```
+
+Install the Custom Resource Definitions (CRDs) and the KubeRay operator (version 1.2.0) in the default namespace:
+```
+helm install kuberay-operator kuberay/kuberay-operator --version 1.2.0
+```
+it has problem for me after running error permission
+I run this
+after that to skip this error 
+```
+NS=default
+# Get the container name (usually "manager"):
+kubectl -n $NS get deploy kuberay-operator -o jsonpath='{.spec.template.spec.containers[0].name}'; echo
+# Save it as MANAGER if you want (optional)
+MANAGER=$(kubectl -n $NS get deploy kuberay-operator -o jsonpath='{.spec.template.spec.containers[0].name}')
+
+# a) Seccomp → Unconfined
+kubectl -n $NS patch deploy kuberay-operator --type=json -p='[
+  {"op":"add","path":"/spec/template/spec/containers/0/securityContext",
+   "value":{"seccompProfile":{"type":"Unconfined"}}}
+]'
+
+# b) AppArmor → unconfined (targets that container specifically)
+kubectl -n $NS patch deploy kuberay-operator --type=json -p="[
+  {\"op\":\"add\",\"path\":\"/spec/template/metadata/annotations\",
+   \"value\":{\"container.apparmor.security.beta.kubernetes.io/${MANAGER}\":\"unconfined\"}}
+]"
+```
+
+#### Verify the KubeRay Configuration
+Check the Operator Pod Status:
+
+Ensure that the KubeRay operator pod is running:
+```
+kubectl get pods -A | grep kuberay-operator
+```
+Expected Output: Example output:
+```
+NAME                                          READY   STATUS    RESTARTS   AGE
+kuberay-operator-975995b7d-75jqd              1/1     Running   0          25h
+```
+
+### basic-pipeline-parallel
+
+Step 1: Basic explanation of Ray and Kuberay
+1. Ray is a framework designed for distributed workloads, such as distributed training and inference. It operates by running multiple processes—typically containers or pods—to distribute and synchronize tasks efficiently.
+
+1. Ray organizes these processes into a Ray cluster, which consists of a single head node and multiple worker nodes. The term "node" here refers to a logical process, which can be deployed as a container or pod.
+
+1. KubeRay is a Kubernetes operator that simplifies the creation and management of Ray clusters within a Kubernetes environment. Without KubeRay, setting up Ray nodes requires manual configuration.
+
+1. Using KubeRay, you can easily deploy Ray clusters on Kubernetes. These clusters enable distributed inference with vLLM, supporting both tensor parallelism and pipeline parallelism.
