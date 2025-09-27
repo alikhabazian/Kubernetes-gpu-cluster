@@ -26,8 +26,8 @@ echo "deb [signed-by=$KEYRING] https://download.opensuse.org/repositories/isv:/c
 
 echo "[*] Configuring apt to use Privoxy proxy (127.0.0.1:8118) for OpenSUSE downloads..."
 sudo tee -a "$APT_CONF" > /dev/null <<EOL
-Acquire::http::Proxy::download.opensuse.org "http://127.0.0.1:8118";
-Acquire::https::Proxy::download.opensuse.org "http://127.0.0.1:8118";
+Acquire::http::Proxy "http://127.0.0.1:8118";
+Acquire::https::Proxy "http://127.0.0.1:8118";
 EOL
 
 echo "[*] Updating apt with new repo..."
