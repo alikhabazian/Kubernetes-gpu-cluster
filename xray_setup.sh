@@ -9,18 +9,23 @@ if [ ! -d "$INSTALL_DIR" ]; then
     mkdir -p "$INSTALL_DIR"
 fi
 
-
 # Move into the directory
 cd "$INSTALL_DIR" || { echo "Failed to enter $INSTALL_DIR"; exit 1; }
-
 
 CONFIG_URL="https://drive.google.com/uc?export=download&id=1WiPY7g7awEExGN_DaqQKvLRv5wY2z22V"
 CONFIG_FILE="config.json"
 XRAY_BIN=$(command -v xray)
 PROXY="socks5://127.0.0.1:1080"
 TEST_URL="https://www.facebook.com"
-##########################
 
+##########################
+# Download and install Xray
+echo "Installing Xray..."
+curl -sL https://github.com/XTLS/Xray-install/raw/main/install-release.sh -o install-release.sh
+chmod +x install-release.sh
+sudo ./install-release.sh
+
+##########################
 # Download the config
 echo "Downloading Xray config..."
 wget -O "$CONFIG_FILE" --no-check-certificate "$CONFIG_URL"
@@ -35,19 +40,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-
-
-
-
-
-
-
-
-
+##########################
+# Restart Xray service
 sudo systemctl restart xray
 
 sleep 10
 
+# Test proxy
 echo "Testing proxy with curl..."
 curl --proxy "$PROXY" -s --head "$TEST_URL" >/dev/null
 if [ $? -eq 0 ]; then
