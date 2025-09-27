@@ -46,7 +46,7 @@ install_crun(){
   local url="${CRUN_DEB_URL:-http://ftp.debian.org/debian/pool/main/c/crun/crun_1.21-1_amd64.deb}"
   local deb="/tmp/$(basename "$url")"
   log "Installing crun from $url"
-  if have_cmd curl; then curl -fsSL -o "$deb" "$url"; elif have_cmd wget; then wget -O "$deb" "$url"; else warn "Need curl/wget for crun download."; return; fi
+  if have_cmd curl; then sudo curl -fsSL -o "$deb" "$url"; elif have_cmd wget; then sudo wget -O "$deb" "$url"; else warn "Need curl/wget for crun download."; return; fi
   dpkg -i "$deb" || apt-get -f install -y || true
   have_cmd crun && crun --version || warn "crun install may have failed."
 }
