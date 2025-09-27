@@ -56,6 +56,13 @@ install_nvidia_toolkit(){
     log "NVIDIA toolkit present: $(nvidia-ctk --version 2>/dev/null | head -n1)"
     return
   fi
+  log "Add nvidia key:"
+  curl --proxy http://127.0.0.1:8118 -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit.gpg
+  
+  distribution=$(. /etc/os-release; echo $ID$VERSION_ID)
+  curl --proxy http://127.0.0.1:8118 -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
   # Try to install via apt ONLY if apt update succeeded.
   if apt_update_safe; then
     apt-get install -y nvidia-container-toolkit || warn "Failed to install nvidia-container-toolkit."
