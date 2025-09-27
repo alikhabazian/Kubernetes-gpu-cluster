@@ -275,7 +275,7 @@ install_k8s_apt() {
 
   
   sudo -E curl --proxy http://127.0.0.1:8118 -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key \
-    | sudo gpg -f --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
 
   echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /" \
