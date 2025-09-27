@@ -13,7 +13,7 @@ fi
 cd "$INSTALL_DIR" || { echo "Failed to enter $INSTALL_DIR"; exit 1; }
 
 CONFIG_URL="https://drive.google.com/uc?export=download&id=1WiPY7g7awEExGN_DaqQKvLRv5wY2z22V"
-CONFIG_FILE="config.json"
+CONFIG_FILE="$INSTALL_DIR/config.json"
 XRAY_BIN=$(command -v xray)
 PROXY="socks5://127.0.0.1:1080"
 TEST_URL="https://www.facebook.com"
@@ -28,6 +28,20 @@ if ! command -v curl >/dev/null 2>&1; then
         sudo yum install -y curl
     else
         echo "Unsupported OS. Please install curl manually."
+        exit 1
+    fi
+fi
+
+##########################
+# Ensure wget is installed
+if ! command -v wget >/dev/null 2>&1; then
+    echo "wget not found. Installing..."
+    if [ -f /etc/debian_version ]; then
+        sudo apt-get update && sudo apt-get install -y wget
+    elif [ -f /etc/redhat-release ]; then
+        sudo yum install -y wget
+    else
+        echo "Unsupported OS. Please install wget manually."
         exit 1
     fi
 fi
@@ -55,7 +69,14 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 ##########################
+# Copy config into system path
+echo "Copying config.json to /usr/local/etc/xray/"
+sudo mkdir -p /usr/local/etc/xray
+sudo cp "$CONFIG_FILE" /usr/local/etc/xray/config.json
+
+##########################
 # Restart Xray service
+echo "Restarting Xray service..."
 sudo systemctl restart xray
 
 sleep 10
