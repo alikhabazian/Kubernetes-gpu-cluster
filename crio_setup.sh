@@ -52,3 +52,19 @@ rm crictl.tar.gz
 echo "[*] Checking crictl status..."
 # Verify
 crictl --version
+echo "[*] adding proxy..."
+sudo systemctl stop crio.service
+sudo mkdir -p /etc/systemd/system/crio.service.d
+sudo tee /etc/systemd/system/crio.service.d/proxy.conf > /dev/null <<EOL
+[Service]
+Environment="HTTP_PROXY=http://127.0.0.1:8118"
+Environment="HTTPS_PROXY=http://127.0.0.1:8118"
+Environment="NO_PROXY=127.0.0.1,localhost,10.0.0.0/8,192.168.0.0/16"
+EOL
+
+
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl restart crio
+echo "[*] Checking crictl status again ..."
+crictl --version
