@@ -138,6 +138,7 @@ main(){
   configure_nvidia_ctk_for_crio
   configure_crio_hooks_dir
   configure_nvidia_hook
+  sudo ln -s /usr/libexec/crio/conmon /usr/local/bin/conmon
   systemctl daemon-reload
   systemctl restart crio || warn "crio restart failed after hooks_dir."
   verify
