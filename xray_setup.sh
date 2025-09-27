@@ -19,6 +19,20 @@ PROXY="socks5://127.0.0.1:1080"
 TEST_URL="https://www.facebook.com"
 
 ##########################
+# Ensure curl is installed
+if ! command -v curl >/dev/null 2>&1; then
+    echo "curl not found. Installing..."
+    if [ -f /etc/debian_version ]; then
+        sudo apt-get update && sudo apt-get install -y curl
+    elif [ -f /etc/redhat-release ]; then
+        sudo yum install -y curl
+    else
+        echo "Unsupported OS. Please install curl manually."
+        exit 1
+    fi
+fi
+
+##########################
 # Download and install Xray
 echo "Installing Xray..."
 curl -sL https://github.com/XTLS/Xray-install/raw/main/install-release.sh -o install-release.sh
