@@ -43,11 +43,15 @@ install_conmon(){
 install_crun(){
   if have_cmd crun; then log "crun present: $(crun --version 2>/dev/null | head -n1)"; return; fi
   # Fallback: fetch official Debian crun .deb directly (no external apt repos).
-  local url="${CRUN_DEB_URL:-http://ftp.debian.org/debian/pool/main/c/crun/crun_1.21-1_amd64.deb}"
-  local deb="/tmp/$(basename "$url")"
-  log "Installing crun from $url"
-  if have_cmd curl; then sudo curl -fsSL -o "$deb" "$url"; elif have_cmd wget; then sudo wget -O "$deb" "$url"; else warn "Need curl/wget for crun download."; return; fi
-  dpkg -i "$deb" || apt-get -f install -y || true
+  apt_update_safe
+  sudo apt install -y libseccomp-dev build-essential git autotools-dev libtool pkg-config libsystemd-dev libcap-dev libseccomp-dev libyajl-dev go-md2man
+  git clone https://github.com/containers/crun.git
+  cd crun
+  git checkout 1.21
+  ./autogen.sh
+  ./configure
+  make
+  sudo make install
   have_cmd crun && crun --version || warn "crun install may have failed."
 }
 
