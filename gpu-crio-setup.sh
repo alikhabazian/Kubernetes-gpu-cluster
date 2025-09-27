@@ -74,6 +74,10 @@ install_nvidia_toolkit(){
     warn "Skipping NVIDIA toolkit install due to apt failure. If device plugin still shows NVML errors, install later:"
     warn "  https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/"
   fi
+  sudo add-apt-repository ppa:graphics-drivers/ppa
+  apt_update_safe
+  sudo apt install -y nvidia-driver-550 nvidia-utils-550
+
 }
 
 configure_nvidia_ctk_for_crio(){
