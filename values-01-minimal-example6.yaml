@@ -1,0 +1,74 @@
+servingEngineSpec:
+  runtimeClassName: "crun"
+
+  modelSpec:
+    - name: "qwen3"
+      repository: "vllm/vllm-openai"
+      tag: "v0.8.4"
+      modelURL: "/models/Qwen3-4B"
+
+      replicaCount: 1
+
+      requestCPU: 6
+      requestMemory: "16Gi"
+      requestGPU: 1
+
+      vllmConfig:
+        gpuMemoryUtilization: 0.99
+        extraArgs:
+          - "--max-model-len"    # shrink KV cache for safety
+          - "128"
+          - "--trust-remote-code"
+
+      # # (optional) pin to your GPU nodes; label them first
+      # #   kubectl label node <node1> gpu=true
+      # #   kubectl label node <node2> gpu=true
+      # nodeSelector:
+      #   gpu: "true"
+
+      extraVolumes:
+        - name: local-models
+          hostPath:
+            path: /models/Qwen3-4B   # path on each node
+            type: Directory
+      extraVolumeMounts:
+        - name: local-models
+          mountPath: /models/Qwen3-4B
+          readOnly: true
+
+
+      # raySpec:
+      #   headNode:
+      #     requestCPU: 1
+      #     requestMemory: "10Gi"
+      #     requestGPU: 1
+
+
+      # Keep replicas on different nodes
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  # Adjust if your chart uses different labels; these are common defaults
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values: ["vllm-stack"]
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values: ["serving-engine"]
+              topologyKey: kubernetes.io/hostname
+
+      # Extra safety to spread by node
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: ["vllm-stack"]
+              - key: app.kubernetes.io/component
+                operator: In
+                values: ["serving-engine"]
