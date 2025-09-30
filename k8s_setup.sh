@@ -324,7 +324,7 @@ post_init_kubeconfig() {
   home_dir="$(getent passwd "$target_user" | cut -d: -f6)"
   if [[ -d "$home_dir" ]]; then
     log "Configuring kubeconfig for user '$target_user' ($home_dir)"
-    install -d -m 0700 "$home_dir/.kube"
+    install -d -m 0755 "$home_dir/.kube"
     cp -f /etc/kubernetes/admin.conf "$home_dir/.kube/config"
     chown "$(id -u "$target_user")":"$(id -g "$target_user")" "$home_dir/.kube/config"
   else
