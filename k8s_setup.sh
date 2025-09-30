@@ -416,6 +416,8 @@ main() {
 
   if [[ "$ROLE" == "control_plane" ]]; then
     init_control_plane
+    curl -fsSL -o calico.yaml https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml
+    kubectl apply -f calico.yaml
   elif [[ "$ROLE" == "node" ]]; then
     join_node
   else
