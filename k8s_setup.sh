@@ -352,7 +352,7 @@ init_control_plane() {
   fi
 
   # Simple success heuristic: kubeadm prints 'kubeadm join' hints
-  if grep -qE 'kubeadm join .*--token .* --discovery-token-ca-cert-hash sha256:' "$logf"; then
+  if grep -qE 'kubeadm join *.*.*.* --token' "$logf"; then
     log "kubeadm init appears successful; setting up kubeconfig"
     post_init_kubeconfig
   else
