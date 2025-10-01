@@ -133,9 +133,13 @@ verify(){
 
 main(){
   require_root
+  
+  step="${1:-all}"
+  if [ "$step" = "step1" ]; then
   install_conmon
   install_crun
-  install_nvidia_toolkit
+  log "Done.install gpu drivers with \n sudo ubuntu-drivers autoinstall \n if doesnt have good cuda check this \n  https://developer.nvidia.com/cuda-downloads \n reboot system and check nvidia-smi must works."
+  elif [ "$step" = "step2" ]; then
   configure_nvidia_ctk_for_crio
   configure_crio_hooks_dir
   configure_nvidia_hook
@@ -144,5 +148,6 @@ main(){
   systemctl restart crio || warn "crio restart failed after hooks_dir."
   verify
   log "Done. If NVIDIA plugin still shows 'NVML: Unknown Error', ensure nvidia-ctk is installed and CRI-O restarted."
+  fi
 }
 main "$@"
