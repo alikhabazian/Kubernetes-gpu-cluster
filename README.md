@@ -71,6 +71,12 @@ run this on your control_plane
 ```
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.17.1/deployments/static/nvidia-device-plugin.yml
 ```
+
+if the control plane must have pod itself
+```
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+kubectl taint nodes --all node-role.kubernetes.io/master-
+```
 just one time for a cluster
 ```
 sudo bash gpu-crio-setup.sh
