@@ -75,9 +75,7 @@ install_nvidia_toolkit(){
     warn "Skipping NVIDIA toolkit install due to apt failure. If device plugin still shows NVML errors, install later:"
     warn "  https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/"
   fi
-  sudo add-apt-repository ppa:graphics-drivers/ppa
-  apt_update_safe
-  sudo apt install -y nvidia-driver-550 nvidia-utils-550
+
 
 }
 
@@ -85,12 +83,13 @@ configure_nvidia_ctk_for_crio(){
   if ! have_cmd nvidia-ctk; then warn "nvidia-ctk not found; skipping runtime configure."; return; fi
   if ! systemctl list-unit-files | grep '^crio\.service'; then warn "crio.service not found; skipping."; return; fi
   log "Configuring NVIDIA runtime hooks for CRI-O and setting default."
-  mkdir -p /etc/crio/crio.conf.d
-  nvidia-ctk runtime configure --runtime=crio --set-as-default --config=/etc/crio/crio.conf.d/99-nvidia.conf || warn "nvidia-ctk runtime configure failed."
+  sudo mkdir -p /etc/crio/crio.conf.d
+  sudo nvidia-ctk runtime configure --runtime=crio --set-as-default --config=/etc/crio/crio.conf.d/99-nvidia.conf || warn "nvidia-ctk runtime configure failed."
   log "Enabling CDI and generating spec."
-  nvidia-ctk runtime configure --runtime=crio --cdi.enabled=true || true
-  mkdir -p /etc/cdi
-  nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml || true
+  sudo nvidia-ctk runtime configure --runtime=crio --cdi.enabled=true || true
+  sudo mkdir -p /etc/cdi
+  sudo nvidia-ctk config --in-place --set nvidia-container-runtime.mode=cdi
+  sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml || true
   systemctl daemon-reload
   systemctl restart crio || warn "Failed to restart crio."
   systemctl restart kubelet || true
@@ -133,21 +132,19 @@ verify(){
 
 main(){
   require_root
-  
-  step="${1:-all}"
-  if [ "$step" = "step1" ]; then
   install_conmon
   install_crun
-  log "Done.install gpu drivers with \n sudo ubuntu-drivers autoinstall \n if doesnt have good cuda check this \n  https://developer.nvidia.com/cuda-downloads \n reboot system and check nvidia-smi must works."
-  elif [ "$step" = "step2" ]; then
+
+  install_nvidia_toolkit
+
   configure_nvidia_ctk_for_crio
-  configure_crio_hooks_dir
+  sudo nvidia-ctk system create-dev-char-symlinks --create-all
+  sudo udevadm control --reload && sudo udevadm trigger
   configure_nvidia_hook
-  sudo ln -s /usr/libexec/crio/conmon /usr/local/bin/conmon
+  configure_crio_hooks_dir  
   systemctl daemon-reload
   systemctl restart crio || warn "crio restart failed after hooks_dir."
   verify
   log "Done. If NVIDIA plugin still shows 'NVML: Unknown Error', ensure nvidia-ctk is installed and CRI-O restarted."
-  fi
 }
 main "$@"
