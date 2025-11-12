@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-PROXY="127.0.0.1:1080"
+PROXY="127.0.0.1:1111"
 PRIVOXY_CONFIG="/etc/privoxy/config"
 
 # Step 1: Install Privoxy

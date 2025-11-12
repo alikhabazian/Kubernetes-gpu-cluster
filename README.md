@@ -18,7 +18,9 @@ sudo reboot
 ```
 now must nvidia-smi works after reboot if not resolve problem then continue the guideline
 
-
+select one of ways between xray and ssh_tunnel
+and according to cahnge privoxy port inside 
+[privoxy_setup.sh](./privoxy_setup.sh) xray is 1080 ssh is 1111
 # xray 
 ```
 sudo bash xray_setup.sh
@@ -27,6 +29,10 @@ sudo bash xray_setup.sh
 # export https_proxy="socks5://127.0.0.1:1080"
 # curl --proxy socks5://127.0.0.1:1080 https://ipinfo.io
 ```
+
+# ssh_tunnel 
+read [ssh-tunel.md](./ssh-tunel.md)
+
 # privoxy
 ```
 sudo bash privoxy_setup.sh
@@ -42,7 +48,14 @@ sudo bash crio_setup.sh
 # to check this properly works
 # sudo systemctl status crio
 ```
+
+
+
+
+
 # k8s
+Note: select one cp cluster or more for more read [multi-cp.md](./multi-cp.md)
+
 one of follwing must run
 k8s setup node
 ```
@@ -90,3 +103,10 @@ sudo bash gpu-crio-setup.sh
 # kubectl describe pods <your_node>
 # must see gpu
 ```
+
+
+
+
+# Add-on
+
+##
