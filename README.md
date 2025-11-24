@@ -73,6 +73,11 @@ sudo bash k8s_setup.sh --yes --role=control_plane
 # if added but it is not ready
 # check pods and network pods like claico must be running
 ```
+after successfull setup
+```
+curl -fsSL https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml | kubectl apply -f -
+```
+and wait to done
 
 # gpu
 and if the node has nvidia-gpu
