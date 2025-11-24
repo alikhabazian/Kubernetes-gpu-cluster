@@ -6,7 +6,7 @@
 # sudo bash k8s_setup.sh --yes --role=node --join="$(ssh ths-4@192.168.41.104 'kubeadm token create --print-join-command')"
 export http_proxy="http://127.0.0.1:8118"
 export https_proxy="http://127.0.0.1:8118"
-export no_proxy="localhost,127.0.0.1,::1"
+export no_proxy="localhost,127.0.0.1,::1,.svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.244.0.0/16,192.168.0.0/16,169.254.0.0/16"
 
 set -euo pipefail
 
