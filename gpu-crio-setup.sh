@@ -70,7 +70,12 @@ install_nvidia_toolkit(){
     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
   # Try to install via apt ONLY if apt update succeeded.
   if apt_update_safe; then
-    apt-get install -y nvidia-container-toolkit || warn "Failed to install nvidia-container-toolkit."
+    NVIDIA_CONTAINER_TOOLKIT_VERSION="1.18.0-1"
+    apt-get install -y \
+      nvidia-container-toolkit=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
+      nvidia-container-toolkit-base=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
+      libnvidia-container-tools=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
+      libnvidia-container1=${NVIDIA_CONTAINER_TOOLKIT_VERSION}
   else
     warn "Skipping NVIDIA toolkit install due to apt failure. If device plugin still shows NVML errors, install later:"
     warn "  https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/"
